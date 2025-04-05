@@ -1,4 +1,5 @@
 ﻿// Models/Aircraft.cs
+using Avalonia.Threading;
 using System;
 
 namespace AvaloniaApplication2.Models
@@ -19,7 +20,11 @@ namespace AvaloniaApplication2.Models
 
         protected virtual void OnStatusChanged(string message)
         {
-            StatusChanged.Invoke(this, message);
+            Dispatcher.UIThread.Post(() =>
+            {
+                Dispatcher.UIThread.VerifyAccess(); // Проверка UI-потока
+                StatusChanged?.Invoke(this, message);
+            });
         }
 
         // Переопределение ToString()

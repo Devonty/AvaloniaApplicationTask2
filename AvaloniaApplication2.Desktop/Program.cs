@@ -9,7 +9,11 @@ namespace AvaloniaApplication2
             .StartWithClassicDesktopLifetime(args);
 
         public static AppBuilder BuildAvaloniaApp()
-            => AppBuilder.Configure<App>()
-                .UsePlatformDetect();
+        {
+            return AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .LogToTrace()
+                .UseReactiveUI();
+        }
     }
 }

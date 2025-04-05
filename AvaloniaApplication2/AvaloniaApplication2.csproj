@@ -11,8 +11,5 @@
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.ReactiveUI" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
-    <PackageReference Include="ReactiveUI" />
-    <PackageReference Include="ReactiveUI.Avalonia" />
-    <PackageVersion Include="Avalonia.Themes.Fluent" />
   </ItemGroup>
 </Project>

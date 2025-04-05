@@ -1,15 +1,28 @@
-﻿using AvaloniaApplication2.Models;
+﻿using Avalonia.Threading;
+using AvaloniaApplication2.Models;
 using ReactiveUI;
-using System;
 using System.Collections.ObjectModel;
 using System.Reactive;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using System.Threading.Tasks;
 
 namespace AvaloniaApplication2.ViewModels
 {
     public class MainViewModel : ReactiveObject
     {
-        private Aircraft? selectedAircraft;
-        private string statusMessage = "Выберите воздушное судно";
+        private Aircraft? _selectedAircraft;
+        public Aircraft? SelectedAircraft
+        {
+            get => _selectedAircraft;
+            set
+            {
+                Dispatcher.UIThread.VerifyAccess(); // Проверка потока
+                this.RaiseAndSetIfChanged(ref _selectedAircraft, value);
+            }
+        }
+
+        private string _statusMessage = "Выберите воздушное судно";
 
         public ObservableCollection<Aircraft> Aircrafts { get; } = new()
         {
@@ -17,16 +30,10 @@ namespace AvaloniaApplication2.ViewModels
             new Helicopter("Bell 206")
         };
 
-        public Aircraft? SelectedAircraft
-        {
-            get => selectedAircraft;
-            set => this.RaiseAndSetIfChanged(ref selectedAircraft, value);
-        }
-
         public string StatusMessage
         {
-            get => statusMessage;
-            set => this.RaiseAndSetIfChanged(ref statusMessage, value);
+            get => _statusMessage;
+            set => this.RaiseAndSetIfChanged(ref _statusMessage, value);
         }
 
         public ReactiveCommand<Unit, Unit> TakeOffCommand { get; }
@@ -34,16 +41,43 @@ namespace AvaloniaApplication2.ViewModels
 
         public MainViewModel()
         {
-            TakeOffCommand = ReactiveCommand.Create(TakeOff);
-            LandCommand = ReactiveCommand.Create(Land);
+            TakeOffCommand = ReactiveCommand.CreateFromTask(
+                async () =>
+                {
+                    if (SelectedAircraft != null)
+                    {
+                        await Task.Run(() => SelectedAircraft.TakeOff());
+                    }
+                    return Unit.Default;
+                },
+                outputScheduler: RxApp.MainThreadScheduler
+            );
+
+            LandCommand = ReactiveCommand.CreateFromTask(
+                async () =>
+                {
+                    if (SelectedAircraft != null)
+                    {
+                        await Task.Run(() => SelectedAircraft.Land());
+                    }
+                    return Unit.Default;
+                },
+                outputScheduler: RxApp.MainThreadScheduler
+            );
 
             foreach (var aircraft in Aircrafts)
             {
-                aircraft.StatusChanged += (s, msg) => StatusMessage = msg;
+                aircraft.StatusChanged += (s, msg) =>
+                {
+                    Dispatcher.UIThread.Post(() => StatusMessage = msg); // Явное обновление в UI-потоке
+                };
             }
         }
 
-        private void TakeOff() => SelectedAircraft?.TakeOff();
-        private void Land() => SelectedAircraft?.Land();
+        private void OnAircraftStatusChanged(object? sender, string message)
+        {
+            // Обновление через планировщик ReactiveUI
+            RxApp.MainThreadScheduler.Schedule(() => StatusMessage = message);
+        }
     }
 }

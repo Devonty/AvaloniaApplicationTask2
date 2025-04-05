@@ -1,5 +1,4 @@
-﻿// Models/Aircraft.cs
-using Avalonia.Threading;
+﻿using Avalonia.Threading;
 using System;
 
 namespace AvaloniaApplication2.Models
@@ -22,26 +21,25 @@ namespace AvaloniaApplication2.Models
         {
             Dispatcher.UIThread.Post(() =>
             {
-                Dispatcher.UIThread.VerifyAccess(); // Проверка UI-потока
+                Dispatcher.UIThread.VerifyAccess();
                 StatusChanged?.Invoke(this, message);
             });
         }
 
-        // Переопределение ToString()
         public override string ToString()
         {
-            return Name; // Отображать название воздушного судна
+            return Name;
         }
     }
 
     public class Airplane : Aircraft
     {
-        public double RunwayLength { get; }
+        public int RunwayLength { get; set; }
 
-        public Airplane(string name, double runwayLength)
+        public Airplane(string name, int initialRunwayLength)
             : base(name)
         {
-            RunwayLength = runwayLength;
+            RunwayLength = initialRunwayLength;
         }
 
         public override bool TakeOff()
@@ -58,6 +56,11 @@ namespace AvaloniaApplication2.Models
 
         public override void Land()
         {
+            if (RunwayLength < 1000)
+            {
+                OnStatusChanged($"{Name} не может приземлиться т.к. слишком короткая ВВП!");
+                return;
+            }
             Altitude = 0;
             OnStatusChanged($"{Name} успешно приземлился!");
         }

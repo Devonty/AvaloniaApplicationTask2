@@ -9,6 +9,12 @@
   </Window.DataContext>
 
   <StackPanel Margin="20">
+    <TextBlock Text="Длина ВПП (м):"
+               IsVisible="{Binding IsRunwayLengthVisible}"/>
+    <TextBox Text="{Binding RunwayLength, Mode=TwoWay}"
+         Margin="0 5 0 0">
+    </TextBox>
+    
     <TextBlock Text="Выберите воздушное судно:" />
     <ComboBox ItemsSource="{Binding Aircrafts}"
              SelectedItem="{Binding SelectedAircraft}"

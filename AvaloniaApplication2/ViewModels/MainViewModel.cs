@@ -2,6 +2,7 @@
 using AvaloniaApplication2.Models;
 using ReactiveUI;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
@@ -17,7 +18,7 @@ namespace AvaloniaApplication2.ViewModels
             get => _selectedAircraft;
             set
             {
-                Dispatcher.UIThread.VerifyAccess(); // Проверка потока
+                Dispatcher.UIThread.VerifyAccess();
                 this.RaiseAndSetIfChanged(ref _selectedAircraft, value);
             }
         }
@@ -39,19 +40,32 @@ namespace AvaloniaApplication2.ViewModels
         public ReactiveCommand<Unit, Unit> TakeOffCommand { get; }
         public ReactiveCommand<Unit, Unit> LandCommand { get; }
 
+        private int _runwayLength;
+
+        [Range(1, int.MaxValue, ErrorMessage = "Длина ВПП должна быть положительным числом")]
+        public int RunwayLength
+        {
+            get => _runwayLength;
+            set => this.RaiseAndSetIfChanged(ref _runwayLength, value);
+        }
         public MainViewModel()
         {
             TakeOffCommand = ReactiveCommand.CreateFromTask(
-                async () =>
-                {
-                    if (SelectedAircraft != null)
-                    {
-                        await Task.Run(() => SelectedAircraft.TakeOff());
-                    }
-                    return Unit.Default;
-                },
-                outputScheduler: RxApp.MainThreadScheduler
-            );
+               async () =>
+               {
+                   if (SelectedAircraft is Airplane airplane)
+                   {
+                       airplane.RunwayLength = RunwayLength; 
+                   }
+
+                   if (SelectedAircraft != null)
+                   {
+                       await Task.Run(() => SelectedAircraft.TakeOff());
+                   }
+                   return Unit.Default;
+               },
+               outputScheduler: RxApp.MainThreadScheduler
+           );
 
             LandCommand = ReactiveCommand.CreateFromTask(
                 async () =>
@@ -69,9 +83,20 @@ namespace AvaloniaApplication2.ViewModels
             {
                 aircraft.StatusChanged += (s, msg) =>
                 {
-                    Dispatcher.UIThread.Post(() => StatusMessage = msg); // Явное обновление в UI-потоке
+                    Dispatcher.UIThread.Post(() => StatusMessage = msg); 
                 };
+
+                
             }
+
+
+        }
+
+        private bool _isRunwayLengthVisible;
+        public bool IsRunwayLengthVisible
+        {
+            get => _isRunwayLengthVisible;
+            set => this.RaiseAndSetIfChanged(ref _isRunwayLengthVisible, value);
         }
 
         private void OnAircraftStatusChanged(object? sender, string message)
